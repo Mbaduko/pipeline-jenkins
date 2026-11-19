@@ -1,9 +1,12 @@
 import express, { Application, NextFunction, Request, Response } from 'express';
+import healthRouter from './routes/health';
 
 const app: Application = express();
 
 app.disable('x-powered-by');
 app.use(express.json());
+
+app.use('/health', healthRouter);
 
 app.get('/', (_req: Request, res: Response) => {
   res.json({ message: 'Hello from pipeline-jenkins' });
