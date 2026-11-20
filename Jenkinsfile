@@ -59,10 +59,33 @@ pipeline {
                 '''
             }
         }
+
+        stage('Push Image') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                                                  usernameVariable: 'REGISTRY_USER',
+                                                  passwordVariable: 'REGISTRY_PASS')]) {
+                    sh '''
+                        echo "$REGISTRY_PASS" | docker login -u "$REGISTRY_USER" --password-stdin
+                        docker push "$DOCKER_IMAGE:$IMAGE_TAG"
+                        docker push "$DOCKER_IMAGE:latest"
+                    '''
+                }
+            }
+            post {
+                always {
+                    sh 'docker logout || true'
+                }
+            }
+        }
     }
 
     post {
+        success {
+            echo "Pushed ${DOCKER_IMAGE}:${IMAGE_TAG}"
+        }
         always {
+            sh 'docker image rm "$DOCKER_IMAGE:$IMAGE_TAG" "$DOCKER_IMAGE:latest" || true'
             cleanWs()
         }
     }
