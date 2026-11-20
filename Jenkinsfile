@@ -30,6 +30,18 @@ pipeline {
                 '''
             }
         }
+
+        stage('Test') {
+            steps {
+                sh 'npm run test:coverage'
+            }
+            post {
+                always {
+                    junit allowEmptyResults: true, testResults: 'reports/junit.xml'
+                    archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
+                }
+            }
+        }
     }
 
     post {
