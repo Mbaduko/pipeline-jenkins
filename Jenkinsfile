@@ -10,13 +10,18 @@ pipeline {
     }
 
     environment {
-        CI = 'true'
+        CI           = 'true'
+        DOCKER_IMAGE = 'mbaduko/pipeline-jenkins'   // <registry-namespace>/<repo>
+        IMAGE_TAG    = "${env.BUILD_NUMBER}"
     }
 
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                script {
+                    def scmVars = checkout scm
+                    env.GIT_COMMIT = scmVars.GIT_COMMIT
+                }
             }
         }
 
@@ -40,6 +45,18 @@ pipeline {
                     junit allowEmptyResults: true, testResults: 'reports/junit.xml'
                     archiveArtifacts artifacts: 'coverage/**', allowEmptyArchive: true
                 }
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                sh '''
+                    docker build \
+                      --label org.opencontainers.image.revision="$GIT_COMMIT" \
+                      -t "$DOCKER_IMAGE:$IMAGE_TAG" \
+                      -t "$DOCKER_IMAGE:latest" \
+                      .
+                '''
             }
         }
     }
