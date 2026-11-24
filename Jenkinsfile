@@ -62,7 +62,7 @@ pipeline {
 
         stage('Push Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dom07-dockerhub',
+                withCredentials([usernamePassword(credentialsId: 'domo7-dockerhub',
                                                   usernameVariable: 'REGISTRY_USER',
                                                   passwordVariable: 'REGISTRY_PASS')]) {
                     sh '''
