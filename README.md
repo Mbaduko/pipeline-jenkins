@@ -2,6 +2,32 @@
 
 A simple Node.js + TypeScript + Express app with a Jenkins CI/CD pipeline that builds, tests, packages it as a Docker image, pushes it to Docker Hub and deploys it to an AWS EC2 instance.
 
+## Table of contents
+
+- [Features](#features)
+- [Architecture](#architecture)
+- [Pipeline stages](#pipeline-stages)
+- [Tech stack](#tech-stack)
+- [Project structure](#project-structure)
+- [Prerequisites](#prerequisites)
+- [Getting started](#getting-started)
+- [Available scripts](#available-scripts)
+- [API](#api)
+- [Jenkins setup](#jenkins-setup)
+- [Screenshots](#screenshots)
+- [Troubleshooting](#troubleshooting)
+- [Contributing](#contributing)
+- [License](#license)
+- [Author](#author)
+
+## Features
+
+- REST API with a `/health` endpoint
+- Unit tests with coverage
+- Linting and formatting (ESLint, Prettier)
+- Small, non-root multi-stage Docker image
+- Automated build, test, push and deploy with Jenkins
+
 ## Architecture
 
 ```mermaid
@@ -53,28 +79,55 @@ Dockerfile          Multi-stage production image
 Jenkinsfile         CI/CD pipeline
 ```
 
+## Prerequisites
+
+- Node.js 20+ and npm
+- Docker
+- Jenkins (for the pipeline) and an AWS EC2 instance (for deployment)
+
+## Getting started
+
+```bash
+git clone https://github.com/Mbaduko/pipeline-jenkins.git
+cd pipeline-jenkins
+npm ci
+cp .env.example .env
+npm run dev        # http://localhost:3000
+```
+
+### Environment variables
+
+| Variable   | Default       | Description             |
+| ---------- | ------------- | ----------------------- |
+| `PORT`     | `3000`        | Port the app listens on |
+| `NODE_ENV` | `development` | Runtime environment     |
+
+### Run with Docker
+
+```bash
+docker build -t pipeline-jenkins .
+docker run -p 3000:3000 pipeline-jenkins
+```
+
+## Available scripts
+
+| Command                 | Description                   |
+| ----------------------- | ----------------------------- |
+| `npm run dev`           | Start in watch mode           |
+| `npm run build`         | Compile TypeScript to `dist/` |
+| `npm start`             | Run the compiled app          |
+| `npm test`              | Run tests                     |
+| `npm run test:coverage` | Run tests with coverage       |
+| `npm run lint`          | Lint the code                 |
+| `npm run format:check`  | Check formatting              |
+| `npm run typecheck`     | Type-check the code           |
+
 ## API
 
 | Method | Path      | Response                                              |
 | ------ | --------- | ----------------------------------------------------- |
 | GET    | `/`       | `{ "message": "Hello from pipeline-jenkins" }`        |
 | GET    | `/health` | `{ "status": "ok", "uptime": ..., "timestamp": ... }` |
-
-## Run locally
-
-```bash
-npm ci
-npm run dev        # http://localhost:3000
-npm test
-npm run lint
-```
-
-With Docker:
-
-```bash
-docker build -t pipeline-jenkins .
-docker run -p 3000:3000 pipeline-jenkins
-```
 
 ## Jenkins setup
 
@@ -117,3 +170,27 @@ HOST_PORT=80
 **Docker and OS on the EC2 instance**
 
 ![Docker and OS versions](screenshots/versions.png)
+
+## Troubleshooting
+
+| Problem                             | Fix                                                            |
+| ----------------------------------- | -------------------------------------------------------------- |
+| `No such DSL method 'sshagent'`     | Install the **SSH Agent** plugin in Jenkins                    |
+| `EC2_HOST: not found`               | Remove spaces around `=` in the secret file                    |
+| `permission denied ... docker.sock` | Add the user (`jenkins` or the EC2 user) to the `docker` group |
+| App not reachable in the browser    | Open port 80 in the EC2 security group                         |
+
+## Contributing
+
+1. Create a branch: `git checkout -b feature/my-change`
+2. Commit using [Conventional Commits](https://www.conventionalcommits.org/) (`feat:`, `fix:`, `docs:` ...)
+3. Make sure `npm run lint` and `npm test` pass
+4. Open a pull request
+
+## License
+
+MIT
+
+## Author
+
+**Clement Nsengiyumva** – [@Mbaduko](https://github.com/Mbaduko)
