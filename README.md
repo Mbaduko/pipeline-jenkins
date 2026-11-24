@@ -25,7 +25,7 @@ A simple Node.js + TypeScript + Express app with a Jenkins CI/CD pipeline that b
 - REST API with a `/health` endpoint
 - Unit tests with coverage
 - Linting and formatting (ESLint, Prettier)
-- Small, non-root multi-stage Docker image
+- Simple, non-root Docker image
 - Automated build, test, push and deploy with Jenkins
 
 ## Architecture
@@ -75,7 +75,7 @@ src/
   server.ts         Entry point
   routes/health.ts  Health check route
 tests/              Jest + Supertest tests
-Dockerfile          Multi-stage production image
+Dockerfile          Production Docker image
 Jenkinsfile         CI/CD pipeline
 ```
 
