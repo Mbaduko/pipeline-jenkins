@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'aws-ec2-agent' }
+    agent { label 'built-in' }
 
     options {
         skipDefaultCheckout()
