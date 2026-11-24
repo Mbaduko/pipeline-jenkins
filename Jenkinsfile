@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'built-in' }
+    agent { label 'aws-ec2-agent' }
 
     options {
         skipDefaultCheckout()
@@ -62,7 +62,7 @@ pipeline {
 
         stage('Push Image') {
             steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-credentials',
+                withCredentials([usernamePassword(credentialsId: 'dom07-dockerhub',
                                                   usernameVariable: 'REGISTRY_USER',
                                                   passwordVariable: 'REGISTRY_PASS')]) {
                     sh '''
