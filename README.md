@@ -57,7 +57,17 @@ The `Jenkinsfile` defines a declarative pipeline:
 - Plugins: Pipeline, Git, JUnit, Credentials Binding, Timestamper, Workspace Cleanup
 - Credential `domo7-dockerhub` (Username with password, use a Docker Hub access token as the password)
 - Update `DOCKER_IMAGE` in the `Jenkinsfile` to your Docker Hub namespace
-- Plugin: SSH Agent; credential `ec2-ssh-key` (SSH Username with private key, the EC2 key pair `.pem`)
-- Set `EC2_HOST` and `EC2_USER` in the `Jenkinsfile`; the instance needs Docker and `curl`, and the SSH user must be in the `docker` group
+- Plugin: SSH Agent; credential `jenkins-agent-key` (SSH Username with private key, the EC2 key pair `.pem`)
+- Credential `jenkins-pipeline-secrets` (Secret file) holding the deployment target:
+
+  ```bash
+  EC2_HOST=3.120.45.10      # required
+  EC2_USER=ubuntu           # required ('ec2-user' on Amazon Linux)
+  CONTAINER_NAME=pipeline-jenkins   # optional, default pipeline-jenkins
+  APP_PORT=3000             # optional, default 3000
+  HOST_PORT=80              # optional, default 80
+  ```
+
+- The instance needs Docker and `curl`, and the SSH user must be in the `docker` group
 - Allow inbound SSH (22) from Jenkins and HTTP (`HOST_PORT`) in the instance security group
 - Create a Pipeline (or Multibranch Pipeline) job using _Pipeline script from SCM_ pointing at this repository
