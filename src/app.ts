@@ -9,7 +9,7 @@ app.use(express.json());
 app.use('/health', healthRouter);
 
 app.get('/', (_req: Request, res: Response) => {
-  res.json({ message: 'Hello, this is my pipeline' });
+  res.json({ message: 'Hello from pipeline-jenkins' });
 });
 
 app.use((_req: Request, res: Response) => {
