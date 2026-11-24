@@ -14,8 +14,7 @@ pipeline {
         DOCKER_IMAGE = 'mbaduko/pipeline-jenkins'   // <registry-namespace>/<repo>
         IMAGE_TAG    = "${env.BUILD_NUMBER}"
 
-        // Deployment target (EC2_HOST, EC2_USER, CONTAINER_NAME, APP_PORT, HOST_PORT)
-        // comes from the 'jenkins-pipeline-secrets' Secret file credential (.env format).
+        // EC2 deployment target is loaded from the 'jenkins-pipeline-secrets' file
     }
 
     stages {
@@ -93,7 +92,7 @@ pipeline {
                     ]) {
                         sh '''
                             set -e
-                            # $ENV_FILE is the PATH to a temporary copy of the .env secret file
+                            # Load deployment target from the secret .env file
                             set -a
                             . "$ENV_FILE"
                             set +a
@@ -126,7 +125,6 @@ pipeline {
                 sshagent(credentials: ['jenkins-agent-key']) {
                     withCredentials([file(credentialsId: 'jenkins-pipeline-secrets', variable: 'ENV_FILE')]) {
                         sh '''
-                            # $ENV_FILE is the PATH to a temporary copy of the .env secret file
                             set -a
                             . "$ENV_FILE"
                             set +a
