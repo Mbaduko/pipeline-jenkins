@@ -9,8 +9,11 @@ pipeline {
         buildDiscarder(logRotator(numToKeepStr: '5'))
     }
 
+    triggers {
+        githubPush()
+    }
+
     environment {
-        CI           = 'true'
         DOCKER_IMAGE = 'mbaduko/pipeline-jenkins'   // <registry-namespace>/<repo>
         IMAGE_TAG    = "${env.BUILD_NUMBER}"
 
