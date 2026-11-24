@@ -16,8 +16,6 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'mbaduko/pipeline-jenkins'   // <registry-namespace>/<repo>
         IMAGE_TAG    = "${env.BUILD_NUMBER}"
-
-        // EC2 deployment target is loaded from the 'jenkins-pipeline-secrets' file
     }
 
     stages {
