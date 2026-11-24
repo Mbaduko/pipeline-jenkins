@@ -48,11 +48,16 @@ The `Jenkinsfile` defines a declarative pipeline:
 3. **Test** – Jest with coverage; JUnit results published to Jenkins
 4. **Docker Build** – build the image tagged `<build-number>` and `latest`
 5. **Push Image** – push both tags to Docker Hub
+6. **Deploy to EC2** – SSH to the instance, pull the image, replace the running container
+7. **Verify Deployment** – poll `/health` on the instance until the app responds
 
 ### Jenkins setup
 
 - Agent labelled `built-in` with Node.js 20+ and Docker installed (the Jenkins user must be able to run `docker`)
 - Plugins: Pipeline, Git, JUnit, Credentials Binding, Timestamper, Workspace Cleanup
-- Credential `dockerhub-credentials` (Username with password, use a Docker Hub access token as the password)
+- Credential `domo7-dockerhub` (Username with password, use a Docker Hub access token as the password)
 - Update `DOCKER_IMAGE` in the `Jenkinsfile` to your Docker Hub namespace
+- Plugin: SSH Agent; credential `ec2-ssh-key` (SSH Username with private key, the EC2 key pair `.pem`)
+- Set `EC2_HOST` and `EC2_USER` in the `Jenkinsfile`; the instance needs Docker and `curl`, and the SSH user must be in the `docker` group
+- Allow inbound SSH (22) from Jenkins and HTTP (`HOST_PORT`) in the instance security group
 - Create a Pipeline (or Multibranch Pipeline) job using _Pipeline script from SCM_ pointing at this repository
