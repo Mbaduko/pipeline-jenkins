@@ -1,73 +1,119 @@
 # pipeline-jenkins
 
-A minimal Node.js + TypeScript + Express service.
+A simple Node.js + TypeScript + Express app with a Jenkins CI/CD pipeline that builds, tests, packages it as a Docker image, pushes it to Docker Hub and deploys it to an AWS EC2 instance.
 
-## Endpoints
+## Architecture
 
-| Method | Path      | Description          |
-| ------ | --------- | -------------------- |
-| GET    | `/`       | Greeting message     |
-| GET    | `/health` | Liveness/health info |
+```mermaid
+flowchart LR
+    dev([Developer]) -->|git push| gh[GitHub repo]
+    gh -->|checkout| jenkins
 
-## Getting started
+    subgraph jenkins[Jenkins server]
+        direction TB
+        s1[Checkout] --> s2[Install/Build] --> s3[Test] --> s4[Docker Build] --> s5[Push Image] --> s6[Deploy to EC2] --> s7[Verify Deployment]
+    end
 
-Requires Node.js 20+ (see `.nvmrc`).
+    s5 -->|docker push| hub[(Docker Hub)]
+    s6 -->|SSH| ec2
+    hub -->|docker pull| ec2
+
+    subgraph ec2[AWS EC2 · Amazon Linux 2023]
+        app[Docker container<br/>Express app :3000]
+    end
+
+    user([User]) -->|HTTP :80| app
+```
+
+## Pipeline stages
+
+| Stage             | What it does                                                                    |
+| ----------------- | ------------------------------------------------------------------------------- |
+| Checkout          | Clone the repository                                                            |
+| Install/Build     | `npm ci` and compile TypeScript                                                 |
+| Test              | Run Jest tests with coverage and publish JUnit results                          |
+| Docker Build      | Build the image tagged with the build number and `latest`                       |
+| Push Image        | Push both tags to Docker Hub                                                    |
+| Deploy to EC2     | SSH to the instance, pull the image, replace the old container, run the new one |
+| Verify Deployment | Call `/health` on the instance until the app responds                           |
+
+## Tech stack
+
+Node.js · TypeScript · Express · Jest · Docker · Jenkins · Docker Hub · AWS EC2
+
+## Project structure
+
+```
+src/
+  app.ts            Express app
+  server.ts         Entry point
+  routes/health.ts  Health check route
+tests/              Jest + Supertest tests
+Dockerfile          Multi-stage production image
+Jenkinsfile         CI/CD pipeline
+```
+
+## API
+
+| Method | Path      | Response                                              |
+| ------ | --------- | ----------------------------------------------------- |
+| GET    | `/`       | `{ "message": "Hello from pipeline-jenkins" }`        |
+| GET    | `/health` | `{ "status": "ok", "uptime": ..., "timestamp": ... }` |
+
+## Run locally
 
 ```bash
 npm ci
-cp .env.example .env
-npm run dev          # start with hot reload on http://localhost:3000
+npm run dev        # http://localhost:3000
+npm test
+npm run lint
 ```
 
-## Scripts
-
-| Script                  | Description                    |
-| ----------------------- | ------------------------------ |
-| `npm run dev`           | Run in watch mode with `tsx`   |
-| `npm run build`         | Compile TypeScript to `dist/`  |
-| `npm start`             | Run the compiled app           |
-| `npm test`              | Run tests                      |
-| `npm run test:coverage` | Run tests with coverage        |
-| `npm run lint`          | Lint with ESLint               |
-| `npm run format:check`  | Check formatting with Prettier |
-| `npm run typecheck`     | Type-check sources and tests   |
-
-## Docker
+With Docker:
 
 ```bash
 docker build -t pipeline-jenkins .
 docker run -p 3000:3000 pipeline-jenkins
 ```
 
-## CI/CD (Jenkins)
+## Jenkins setup
 
-The `Jenkinsfile` defines a declarative pipeline:
+**Plugins:** Pipeline, Git, JUnit, Credentials Binding, SSH Agent, Timestamper, Workspace Cleanup
 
-1. **Checkout** – check out the source from SCM
-2. **Install/Build** – `npm ci` and compile TypeScript
-3. **Test** – Jest with coverage; JUnit results published to Jenkins
-4. **Docker Build** – build the image tagged `<build-number>` and `latest`
-5. **Push Image** – push both tags to Docker Hub
-6. **Deploy to EC2** – SSH to the instance, pull the image, replace the running container
-7. **Verify Deployment** – poll `/health` on the instance until the app responds
+**Credentials:**
 
-### Jenkins setup
+| ID                         | Type                          | Purpose                    |
+| -------------------------- | ----------------------------- | -------------------------- |
+| `domo7-dockerhub`          | Username with password        | Docker Hub login           |
+| `jenkins-agent-key`        | SSH Username with private key | SSH access to the EC2 host |
+| `jenkins-pipeline-secrets` | Secret file                   | Deployment target (`.env`) |
 
-- Agent labelled `built-in` with Node.js 20+ and Docker installed (the Jenkins user must be able to run `docker`)
-- Plugins: Pipeline, Git, JUnit, Credentials Binding, Timestamper, Workspace Cleanup
-- Credential `domo7-dockerhub` (Username with password, use a Docker Hub access token as the password)
-- Update `DOCKER_IMAGE` in the `Jenkinsfile` to your Docker Hub namespace
-- Plugin: SSH Agent; credential `jenkins-agent-key` (SSH Username with private key, the EC2 key pair `.pem`)
-- Credential `jenkins-pipeline-secrets` (Secret file) holding the deployment target:
+The secret file uses `KEY=value` lines (no spaces around `=`):
 
-  ```bash
-  EC2_HOST=3.120.45.10
-  EC2_USER=ubuntu            # 'ec2-user' on Amazon Linux
-  CONTAINER_NAME=pipeline-jenkins
-  APP_PORT=3000              # port the app listens on in the container
-  HOST_PORT=80               # port exposed on the instance
-  ```
+```bash
+EC2_HOST=<ec2-public-ip>
+EC2_USER=ec2-user
+CONTAINER_NAME=pipeline-jenkins
+APP_PORT=3000
+HOST_PORT=80
+```
 
-- The instance needs Docker and `curl`, and the SSH user must be in the `docker` group
-- Allow inbound SSH (22) from Jenkins and HTTP (`HOST_PORT`) in the instance security group
-- Create a Pipeline (or Multibranch Pipeline) job using _Pipeline script from SCM_ pointing at this repository
+**EC2 instance:** Docker installed, the SSH user in the `docker` group, and the security group allowing SSH (22) from Jenkins and HTTP (80).
+
+## Screenshots
+
+**Successful pipeline run**
+
+![Pipeline logs](screenshots/pipeline-logs.png)
+
+**App running on EC2**
+
+![App in browser](screenshots/app-in-browser.png)
+
+**Jenkins version**
+
+![Jenkins version](screenshots/jenkins-version.png)
+
+**Docker and OS on the EC2 instance**
+
+![Docker and OS versions](screenshots/versions.png)
