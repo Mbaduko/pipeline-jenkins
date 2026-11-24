@@ -14,19 +14,8 @@ pipeline {
         DOCKER_IMAGE = 'mbaduko/pipeline-jenkins'   // <registry-namespace>/<repo>
         IMAGE_TAG    = "${env.BUILD_NUMBER}"
 
-        // Deployment target values (EC2_HOST, EC2_USER, CONTAINER_NAME, APP_PORT, HOST_PORT)
-        // are loaded from the 'jenkins-pipeline-secrets' Secret file credential.
-        // Shell snippet that loads them, validates required keys and applies defaults.
-        LOAD_DEPLOY_ENV = '''
-            set -a
-            . "$DEPLOY_ENV_FILE"
-            set +a
-            : "${EC2_HOST:?EC2_HOST is missing from jenkins-pipeline-secrets}"
-            : "${EC2_USER:?EC2_USER is missing from jenkins-pipeline-secrets}"
-            CONTAINER_NAME="${CONTAINER_NAME:-pipeline-jenkins}"
-            APP_PORT="${APP_PORT:-3000}"
-            HOST_PORT="${HOST_PORT:-80}"
-        '''
+        // Deployment target (EC2_HOST, EC2_USER, CONTAINER_NAME, APP_PORT, HOST_PORT)
+        // comes from the 'jenkins-pipeline-secrets' Secret file credential (.env format).
     }
 
     stages {
@@ -97,14 +86,17 @@ pipeline {
             steps {
                 sshagent(credentials: ['jenkins-agent-key']) {
                     withCredentials([
-                        file(credentialsId: 'jenkins-pipeline-secrets', variable: 'DEPLOY_ENV_FILE'),
+                        file(credentialsId: 'jenkins-pipeline-secrets', variable: 'ENV_FILE'),
                         usernamePassword(credentialsId: 'domo7-dockerhub',
                                          usernameVariable: 'REGISTRY_USER',
                                          passwordVariable: 'REGISTRY_PASS')
                     ]) {
                         sh '''
                             set -e
-                            eval "$LOAD_DEPLOY_ENV"
+                            # $ENV_FILE is the PATH to a temporary copy of the .env secret file
+                            set -a
+                            . "$ENV_FILE"
+                            set +a
                             SSH="ssh -o StrictHostKeyChecking=accept-new $EC2_USER@$EC2_HOST"
 
                             echo "==> 1. Connecting to the EC2 instance"
@@ -132,9 +124,12 @@ pipeline {
         stage('Verify Deployment') {
             steps {
                 sshagent(credentials: ['jenkins-agent-key']) {
-                    withCredentials([file(credentialsId: 'jenkins-pipeline-secrets', variable: 'DEPLOY_ENV_FILE')]) {
+                    withCredentials([file(credentialsId: 'jenkins-pipeline-secrets', variable: 'ENV_FILE')]) {
                         sh '''
-                            eval "$LOAD_DEPLOY_ENV"
+                            # $ENV_FILE is the PATH to a temporary copy of the .env secret file
+                            set -a
+                            . "$ENV_FILE"
+                            set +a
                             SSH="ssh -o StrictHostKeyChecking=accept-new $EC2_USER@$EC2_HOST"
 
                             echo "==> 5. Checking http://localhost:$HOST_PORT/health on the EC2 instance"

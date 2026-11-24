@@ -61,11 +61,11 @@ The `Jenkinsfile` defines a declarative pipeline:
 - Credential `jenkins-pipeline-secrets` (Secret file) holding the deployment target:
 
   ```bash
-  EC2_HOST=3.120.45.10      # required
-  EC2_USER=ubuntu           # required ('ec2-user' on Amazon Linux)
-  CONTAINER_NAME=pipeline-jenkins   # optional, default pipeline-jenkins
-  APP_PORT=3000             # optional, default 3000
-  HOST_PORT=80              # optional, default 80
+  EC2_HOST=3.120.45.10
+  EC2_USER=ubuntu            # 'ec2-user' on Amazon Linux
+  CONTAINER_NAME=pipeline-jenkins
+  APP_PORT=3000              # port the app listens on in the container
+  HOST_PORT=80               # port exposed on the instance
   ```
 
 - The instance needs Docker and `curl`, and the SSH user must be in the `docker` group
